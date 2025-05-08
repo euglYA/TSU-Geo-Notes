@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ru">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+        <title>Лямичев Е.Ю., 932408, ИМПКН Вариант 3</title>
+        <link rel="manifest" href="manifest.json" />
+        <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+        <script src="https://cdn.tailwindcss.com"></script>
+    </head>
+    <body class="bg-gray-100 text-gray-800 font-sans p-5 sm:p-10">
+        <h1 class="text-3xl font-bold text-blue-900 mb-6">Лабораторная - заметки</h1>
+        <div id="map" class="h-[400px] rounded-xl shadow mb-8"></div>
+        <h2 class="text-2xl font-semibold text-blue-800 mb-4">Добавить заметку</h2>
+        <div class="flex flex-col sm:flex-row sm:items-center gap-4 mb-8">
+            <input
+                type="text"
+                id="noteText"
+                placeholder="Текст заметки"
+                class="w-full sm:w-96 px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <button
+                id="addNote"
+                class="bg-blue-900 text-white px-6 py-2 rounded-xl hover:bg-blue-800 transition"
+            >
+                Добавить на центр карты
+            </button>
+        </div>
+        <h2 class="text-2xl font-semibold text-blue-800 mb-4">Заметки:</h2>
+        <ul id="notesList" class="space-y-3 font-[500]"></ul>
+
+        <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+        <script>
+            const map = L.map('map').setView([55.751244, 37.618423], 10);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
+
+            let notes = JSON.parse(localStorage.getItem('notes')) || [];
+
+            function displayNotes() {
+                document.getElementById('notesList').innerHTML = '';
+                const bounds = map.getBounds();
+                notes.forEach(note => {
+                    L.marker([note.lat, note.lng]).addTo(map).bindPopup(note.text);
+                    if (bounds.contains([note.lat, note.lng])) {
+                        const li = document.createElement('li');
+                        li.textContent = "- " + note.text;
+                        document.getElementById('notesList').appendChild(li);
+                    }
+                });
+            }
+
+            displayNotes();
+
+            document.getElementById('addNote').addEventListener('click', () => {
+                const text = document.getElementById('noteText').value;
+                if (!text) return;
+                const center = map.getCenter();
+                const newNote = { text, lat: center.lat, lng: center.lng };
+                notes.push(newNote);
+                localStorage.setItem('notes', JSON.stringify(notes));
+                document.getElementById('noteText').value = '';
+                displayNotes();
+            });
+        </script>
+        <script>
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('/public/service-worker.js')
+                        .then(reg => console.log('Service Worker registered', reg))
+                        .catch(err => console.error('SW registration failed', err));
+                });
+            }
+        </script>
+    </body>
+</html>
